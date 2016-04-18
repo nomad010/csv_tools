@@ -1,6 +1,8 @@
 CXX=g++-4.9
 CXXFLAGS=-Wall -Wextra -Wno-unused -Wno-unused-parameter -std=c++14 -I./src/ 
 CXXLIBS=-lm 
+RELEASE_FLAGS=-O3
+DEBUG_FLAGS=-g -DDEBUG
 
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
@@ -35,24 +37,24 @@ obj/debug:
 	@mkdir -p obj/debug
 
 $(DEBUG_EXECS): $(DEBUG_OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ obj/debug/main_$(subst _debug,,$@).o $(filter-out obj/debug/test_%.o, $(filter-out obj/debug/main_%.o, $(DEBUG_OBJS))) $(CXXLIBS)
+	$(CXX) $(CXXFLAGS) $(DEBUG_FLAGS) -o $@ obj/debug/main_$(subst _debug,,$@).o $(filter-out obj/debug/test_%.o, $(filter-out obj/debug/main_%.o, $(DEBUG_OBJS))) $(CXXLIBS)
 
 obj/debug/%.o: src/%.cpp
 	@mkdir -p `dirname $@`
-	$(CXX) -g -DDEBUG $(CXXFLAGS) -c -o $@ $<
+	$(CXX) $(DEBUG_FLAGS) $(CXXFLAGS) -c -o $@ $<
 
 obj/release:
 	@mkdir -p obj/release
 
 $(RELEASE_EXECS): $(RELEASE_OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ obj/release/main_$@.o $(filter-out obj/release/test_%.o, $(filter-out obj/release/main_%.o, $(RELEASE_OBJS))) $(CXXLIBS)
+	$(CXX) $(CXXFLAGS) $(RELEASE_FLAGS) -o $@ obj/release/main_$@.o $(filter-out obj/release/test_%.o, $(filter-out obj/release/main_%.o, $(RELEASE_OBJS))) $(CXXLIBS)
 
 obj/release/%.o: src/%.cpp
 	@mkdir -p `dirname $@`
-	$(CXX) -O2 $(CXXFLAGS) -c -o $@ $<
+	$(CXX) $(RELEASE_FLAGS) $(CXXFLAGS) -c -o $@ $<
 
 $(TESTS): $(RELEASE_OBJS)
-	$(CXX) $(CXXFLAGS) -o tests/$@ obj/release/test_$@.o $(filter-out obj/release/test_%.o, $(filter-out obj/release/main_%.o, $(RELEASE_OBJS))) $(CXXLIBS)
+	$(CXX) $(RELEASE_FLAGS) $(CXXFLAGS) -o tests/$@ obj/release/test_$@.o $(filter-out obj/release/test_%.o, $(filter-out obj/release/main_%.o, $(RELEASE_OBJS))) $(CXXLIBS)
 
 $(TEST_RESULTS): $(TESTS)
 	@(./tests/$(subst _perform,,$@) && (echo "\033[92m$(subst _perform,,$@)\033[0m") || (echo "\033[91m$(subst _perform,,$@)\033[0m";))
@@ -64,4 +66,3 @@ clean:
 
 check-syntax:
 	$(CXX) $(CXXFLAGS) -Wextra -Wno-sign-compare -fsyntax-only $(CHK_SOURCES)
-
